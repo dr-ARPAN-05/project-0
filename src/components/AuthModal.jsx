@@ -178,7 +178,7 @@ export default function AuthModal({ open, onClose }) {
                 {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
                 <button
                   type="submit"
-                  disabled={busy || code.length !== 6}
+                  disabled={busy || code.length !== 8}
                   className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
                 >
                   {busy ? 'Verifying…' : 'Verify code'}
