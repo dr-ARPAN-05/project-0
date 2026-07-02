@@ -21,11 +21,12 @@ export async function signInWithGoogle(next = window.location.pathname) {
 // clickable magic link (routes through /auth/callback) AND a 6-digit code
 // (verified manually via verifyEmailOtp) — the template controls which
 // pieces show up, both are enabled by default once emailRedirectTo is set.
-export async function signInWithEmailOtp(email, next = window.location.pathname) {
+// captchaToken is required once hCaptcha protection is enabled in Supabase.
+export async function signInWithEmailOtp(email, next = window.location.pathname, captchaToken) {
   const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo, shouldCreateUser: true },
+    options: { emailRedirectTo, shouldCreateUser: true, captchaToken },
   });
   if (error) throw error;
 }
@@ -40,6 +41,27 @@ export async function verifyEmailOtp(email, token) {
   });
   if (error) throw error;
   return data.session;
+}
+
+// Sends a fresh 6-digit code to an ALREADY-signed-in user (e.g. a first-time
+// Google sign-up we need to gate). shouldCreateUser: false because this
+// user already exists — we're just re-confirming their email.
+export async function sendVerificationCode(email, captchaToken) {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false, captchaToken },
+  });
+  if (error) throw error;
+}
+
+// Call AFTER verifyEmailOtp() succeeds. The actual trust decision happens
+// server-side in the confirm_email_verification() Postgres function, which
+// checks Supabase's own record of a recent email confirmation rather than
+// taking the client's word for it. Returns true only if that check passed.
+export async function confirmEmailVerification() {
+  const { data, error } = await supabase.rpc('confirm_email_verification');
+  if (error) throw error;
+  return data === true;
 }
 
 // Sign out and always land back on the main domain, per spec.

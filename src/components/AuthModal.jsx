@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { signInWithGoogle, signInWithEmailOtp, verifyEmailOtp } from '../lib/shared-auth';
+import InvisibleCaptcha from './InvisibleCaptcha.jsx';
 
 // Steps: 'choose' -> pick Google or email
 //        'email'  -> type email, send it
@@ -11,6 +12,7 @@ export default function AuthModal({ open, onClose }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const captchaRef = useRef(null);
 
   const reset = () => {
     setStep('choose');
@@ -39,7 +41,8 @@ export default function AuthModal({ open, onClose }) {
     setError(null);
     setBusy(true);
     try {
-      await signInWithEmailOtp(email);
+      const captchaToken = await captchaRef.current.getToken();
+      await signInWithEmailOtp(email, window.location.pathname, captchaToken);
       setStep('sent');
     } catch (err) {
       setError(err.message);
@@ -185,6 +188,7 @@ export default function AuthModal({ open, onClose }) {
               </form>
             )}
           </motion.div>
+          <InvisibleCaptcha ref={captchaRef} />
         </motion.div>
       )}
     </AnimatePresence>
