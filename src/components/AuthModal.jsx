@@ -42,10 +42,15 @@ export default function AuthModal({ open, onClose }) {
     setBusy(true);
     try {
       const captchaToken = await captchaRef.current.getToken();
-      await signInWithEmailOtp(email, window.location.pathname, captchaToken);
+      await signInWithEmailOtp(email, { captchaToken, shouldCreateUser: false });
       setStep('sent');
     } catch (err) {
-      setError(err.message);
+      setError(
+        err.message?.toLowerCase().includes('signups not allowed') ||
+          err.message?.toLowerCase().includes('not found')
+          ? "We couldn't find an account with that email — use Sign up instead."
+          : err.message
+      );
     } finally {
       setBusy(false);
     }

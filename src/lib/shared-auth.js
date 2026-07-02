@@ -17,17 +17,21 @@ export async function signInWithGoogle(next = window.location.pathname) {
   if (error) throw error;
 }
 
-// Email sign-in, step 1: send the email. The same email carries both a
+// Email sign-in/signup, step 1: send the email. The same email carries both a
 // clickable magic link (routes through /auth/callback) AND a 6-digit code
 // (verified manually via verifyEmailOtp) — the template controls which
-// pieces show up, both are enabled by default once emailRedirectTo is set.
-// captchaToken is required once hCaptcha protection is enabled in Supabase.
-export async function signInWithEmailOtp(email, next = window.location.pathname, captchaToken) {
+// pieces show up. captchaToken is required once hCaptcha is enabled in
+// Supabase. Pass data: { full_name } on signup so the new-user trigger
+// picks it up. Pass shouldCreateUser: false for a pure sign-in flow so a
+// mistyped/unknown email fails clearly instead of quietly creating an account.
+export async function signInWithEmailOtp(
+  email,
+  { next = window.location.pathname, captchaToken, data, shouldCreateUser = true } = {}
+) {
   const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo, shouldCreateUser: true, captchaToken },
-  });
+  const options = { emailRedirectTo, shouldCreateUser, captchaToken };
+  if (data) options.data = data;
+  const { error } = await supabase.auth.signInWithOtp({ email, options });
   if (error) throw error;
 }
 
