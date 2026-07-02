@@ -172,7 +172,7 @@ export default function AuthModal({ open, onClose }) {
                   maxLength={8}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="12345678"
+                  placeholder="00000000"
                   className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-lg tracking-[0.4em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
                 />
                 {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
