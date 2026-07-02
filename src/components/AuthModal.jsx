@@ -136,7 +136,7 @@ export default function AuthModal({ open, onClose }) {
                 </button>
                 <h3 className="font-display text-xl font-semibold text-white">Enter your email</h3>
                 <p className="mt-1 text-sm text-white/50">
-                  We'll send a sign-in link and a 6-digit code — use whichever's easier.
+                  We'll send a sign-in link and a 8-digit code — use whichever's easier.
                 </p>
                 <input
                   type="email"
@@ -163,16 +163,16 @@ export default function AuthModal({ open, onClose }) {
                 <h3 className="font-display text-xl font-semibold text-white">Check your inbox</h3>
                 <p className="mt-1 text-sm leading-relaxed text-white/50">
                   Sent to <span className="text-lavender">{email}</span>. Click the link there, or
-                  type the 6-digit code below.
+                  type the 8-digit code below.
                 </p>
                 <input
                   type="text"
                   inputMode="numeric"
                   autoFocus
-                  maxLength={6}
+                  maxLength={8}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="123456"
+                  placeholder="12345678"
                   className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-lg tracking-[0.4em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
                 />
                 {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
