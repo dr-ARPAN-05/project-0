@@ -1,8 +1,19 @@
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { signInWithGoogle, signInWithEmailOtp, verifyEmailOtp } from '../lib/shared-auth';
+import {
+  signInWithGoogle,
+  signUpWithPassword,
+  verifySignupOtp,
+  signInWithPassword,
+  signInWithEmailOtp,
+  verifyEmailOtp,
+  requestPasswordReset,
+  verifyRecoveryOtp,
+  updatePassword,
+} from '../lib/shared-auth';
 import InvisibleCaptcha from './InvisibleCaptcha.jsx';
 import ModalShell from './ModalShell.jsx';
+import PasswordField from './PasswordField.jsx';
 
 const GoogleIcon = () => (
   <svg width="16" height="16" viewBox="0 0 48 48">
@@ -13,14 +24,26 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// One modal, two tabs (Sign up / Log in). Each tab: email flow on top,
-// Google below. Both tabs share the same 'code' step once an email is sent.
+const CODE_LENGTH = 8;
+
+// Steps:
+//  'form'            sign up (name+email+password) or log in (email+password), tab-dependent
+//  'code'            verify the emailed code — for signup confirmation OR passwordless login fallback
+//  'forgot-email'    ask/confirm which email to send a reset code to
+//  'forgot-code'     verify that reset code
+//  'forgot-password' set a new password
 export default function JoinModal({ open, onClose }) {
   const [tab, setTab] = useState('signup'); // 'signup' | 'login'
-  const [step, setStep] = useState('form'); // 'form' | 'code'
+  const [step, setStep] = useState('form');
+  const [codeMode, setCodeMode] = useState('signup-confirm'); // 'signup-confirm' | 'login-passwordless'
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  const [showForgotLink, setShowForgotLink] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const captchaRef = useRef(null);
@@ -28,9 +51,13 @@ export default function JoinModal({ open, onClose }) {
   const reset = () => {
     setTab('signup');
     setStep('form');
+    setCodeMode('signup-confirm');
     setName('');
     setEmail('');
+    setPassword('');
     setCode('');
+    setNewPassword('');
+    setShowForgotLink(false);
     setError(null);
     setBusy(false);
   };
@@ -43,7 +70,8 @@ export default function JoinModal({ open, onClose }) {
   const switchTab = (next) => {
     setTab(next);
     setStep('form');
-    setCode('');
+    setPassword('');
+    setShowForgotLink(false);
     setError(null);
   };
 
@@ -56,42 +84,129 @@ export default function JoinModal({ open, onClose }) {
     }
   };
 
-  const handleSubmitEmail = async (e) => {
+  // ---------- Sign up ----------
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
       const captchaToken = await captchaRef.current.getToken();
-      if (tab === 'signup') {
-        await signInWithEmailOtp(email, { captchaToken, data: { full_name: name.trim() } });
-      } else {
-        await signInWithEmailOtp(email, { captchaToken, shouldCreateUser: false });
-      }
+      await signUpWithPassword(email, password, { captchaToken, data: { full_name: name.trim() } });
+      setCodeMode('signup-confirm');
       setStep('code');
     } catch (err) {
-      setError(
-        tab === 'login' &&
-          (err.message?.toLowerCase().includes('signups not allowed') ||
-            err.message?.toLowerCase().includes('not found'))
-          ? "We couldn't find an account with that email — try the Sign up tab instead."
-          : err.message
-      );
+      setError(err.message);
     } finally {
       setBusy(false);
     }
   };
 
-  const handleVerify = async (e) => {
+  // ---------- Log in ----------
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setShowForgotLink(false);
+    setBusy(true);
+    try {
+      const captchaToken = await captchaRef.current.getToken();
+      await signInWithPassword(email, password, captchaToken);
+      close();
+      window.location.reload();
+    } catch (err) {
+      setError(err.message || 'Wrong email or password.');
+      setShowForgotLink(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePasswordlessLogin = async () => {
+    if (!email) {
+      setError('Enter your email above first.');
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      const captchaToken = await captchaRef.current.getToken();
+      await signInWithEmailOtp(email, { captchaToken, shouldCreateUser: false });
+      setCodeMode('login-passwordless');
+      setStep('code');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // ---------- Code verification (shared by signup confirm + passwordless login) ----------
+  const handleVerifyCode = async (e) => {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      await verifyEmailOtp(email, code);
+      if (codeMode === 'signup-confirm') {
+        await verifySignupOtp(email, code);
+      } else {
+        await verifyEmailOtp(email, code);
+      }
       close();
-      window.location.reload(); // simplest way to refresh auth state everywhere
+      window.location.reload();
     } catch (err) {
       setError(err.message);
       setCode('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // ---------- Forgot password ----------
+  const goToForgot = () => {
+    setError(null);
+    setStep('forgot-email');
+  };
+
+  const handleSendResetCode = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const captchaToken = await captchaRef.current.getToken();
+      await requestPasswordReset(email, captchaToken);
+      setCode('');
+      setStep('forgot-code');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleVerifyResetCode = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      await verifyRecoveryOtp(email, code);
+      setStep('forgot-password');
+    } catch (err) {
+      setError(err.message);
+      setCode('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSetNewPassword = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      await updatePassword(newPassword);
+      close();
+      window.location.reload();
+    } catch (err) {
+      setError(err.message);
     } finally {
       setBusy(false);
     }
@@ -139,42 +254,94 @@ export default function JoinModal({ open, onClose }) {
                 One account, works on every app on arpansarkar.org.
               </p>
 
-              <form onSubmit={handleSubmitEmail}>
-                {tab === 'signup' && (
-                  <>
-                    <label className="mt-5 block text-xs font-medium text-white/50">Full name</label>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your name"
-                      className="mt-1.5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
-                    />
-                  </>
-                )}
+              {tab === 'signup' ? (
+                <form onSubmit={handleSignup}>
+                  <label className="mt-5 block text-xs font-medium text-white/50">Full name</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="mt-1.5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+                  />
 
-                <label className={`${tab === 'signup' ? 'mt-4' : 'mt-5'} block text-xs font-medium text-white/50`}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="mt-1.5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
-                />
+                  <label className="mt-4 block text-xs font-medium text-white/50">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="mt-1.5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+                  />
 
-                {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
-                >
-                  {busy ? 'Sending…' : tab === 'signup' ? 'Send verification code' : 'Send code & link'}
-                </button>
-              </form>
+                  <label className="mt-4 block text-xs font-medium text-white/50">Password</label>
+                  <PasswordField
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    autoComplete="new-password"
+                    className="mt-1.5"
+                  />
+
+                  {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
+                  >
+                    {busy ? 'Creating…' : 'Create account'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleLogin}>
+                  <label className="mt-5 block text-xs font-medium text-white/50">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="mt-1.5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+                  />
+
+                  <label className="mt-4 block text-xs font-medium text-white/50">Password</label>
+                  <PasswordField
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    className="mt-1.5"
+                  />
+
+                  {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+                  {showForgotLink && (
+                    <button
+                      type="button"
+                      onClick={goToForgot}
+                      className="mt-2 text-xs font-medium text-amber underline underline-offset-4 hover:text-amber/80"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
+                  >
+                    {busy ? 'Logging in…' : 'Log in'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePasswordlessLogin}
+                    disabled={busy}
+                    className="mt-3 w-full text-center text-xs text-white/40 hover:text-white/70"
+                  >
+                    No password set? Email me a code instead
+                  </button>
+                </form>
+              )}
 
               <div className="my-4 flex items-center gap-3">
                 <div className="h-px flex-1 bg-line" />
@@ -194,7 +361,7 @@ export default function JoinModal({ open, onClose }) {
           )}
 
           {step === 'code' && (
-            <form onSubmit={handleVerify}>
+            <form onSubmit={handleVerifyCode}>
               <button
                 type="button"
                 onClick={() => setStep('form')}
@@ -204,34 +371,105 @@ export default function JoinModal({ open, onClose }) {
               </button>
               <h3 className="font-display text-xl font-semibold text-white">Enter your code</h3>
               <p className="mt-1 text-sm leading-relaxed text-white/50">
-                {tab === 'signup' ? (
-                  <>
-                    We sent an 8-digit code to <span className="text-lavender">{email}</span>.
-                  </>
-                ) : (
-                  <>
-                    Sent to <span className="text-lavender">{email}</span>. Click the link there,
-                    or type the 8-digit code below.
-                  </>
-                )}
+                We sent an {CODE_LENGTH}-digit code to <span className="text-lavender">{email}</span>.
               </p>
               <input
                 type="text"
                 inputMode="numeric"
                 autoFocus
-                maxLength={8}
+                maxLength={CODE_LENGTH}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                placeholder="12345678"
+                placeholder={'1'.repeat(CODE_LENGTH)}
                 className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-base tracking-[0.25em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
               />
               {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
               <button
                 type="submit"
-                disabled={busy || code.length !== 8}
+                disabled={busy || code.length !== CODE_LENGTH}
                 className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
               >
-                {busy ? 'Verifying…' : tab === 'signup' ? 'Verify & create account' : 'Verify code'}
+                {busy ? 'Verifying…' : 'Verify & continue'}
+              </button>
+            </form>
+          )}
+
+          {step === 'forgot-email' && (
+            <form onSubmit={handleSendResetCode}>
+              <button
+                type="button"
+                onClick={() => setStep('form')}
+                className="mb-3 text-xs text-white/40 hover:text-white/70"
+              >
+                ← back
+              </button>
+              <h3 className="font-display text-xl font-semibold text-white">Reset your password</h3>
+              <p className="mt-1 text-sm text-white/50">We'll send a code to confirm it's you.</p>
+              <input
+                type="email"
+                required
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+              />
+              {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+              <button
+                type="submit"
+                disabled={busy}
+                className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
+              >
+                {busy ? 'Sending…' : 'Send reset code'}
+              </button>
+            </form>
+          )}
+
+          {step === 'forgot-code' && (
+            <form onSubmit={handleVerifyResetCode}>
+              <h3 className="font-display text-xl font-semibold text-white">Enter the reset code</h3>
+              <p className="mt-1 text-sm leading-relaxed text-white/50">
+                Sent to <span className="text-lavender">{email}</span>.
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoFocus
+                maxLength={CODE_LENGTH}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                placeholder={'1'.repeat(CODE_LENGTH)}
+                className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-base tracking-[0.25em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+              />
+              {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+              <button
+                type="submit"
+                disabled={busy || code.length !== CODE_LENGTH}
+                className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
+              >
+                {busy ? 'Verifying…' : 'Verify code'}
+              </button>
+            </form>
+          )}
+
+          {step === 'forgot-password' && (
+            <form onSubmit={handleSetNewPassword}>
+              <h3 className="font-display text-xl font-semibold text-white">Set a new password</h3>
+              <p className="mt-1 text-sm text-white/50">You'll be logged in right after this.</p>
+              <PasswordField
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+                className="mt-5"
+              />
+              {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+              <button
+                type="submit"
+                disabled={busy}
+                className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
+              >
+                {busy ? 'Saving…' : 'Save new password'}
               </button>
             </form>
           )}
