@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 /**
  * Shared full-screen modal shell used by every popup on the site
- * (AuthModal, SignUpModal, ComingSoonModal). Handles:
+ * (JoinModal, ComingSoonModal). Handles:
  *  - locking background scroll while open (stops the page shifting under it)
  *  - a strong, full-page blur + dark overlay
  *  - true centering on mobile via dynamic viewport height (100dvh), which
