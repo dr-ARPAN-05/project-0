@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom';
+
 export default function Footer() {
   return (
     <footer className="border-t border-line/70 px-5 py-12">
-      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+      <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-8 md:flex-row md:items-start">
         <div>
           <p className="font-display text-lg font-bold text-white">
             arpan<span className="text-amber">sarkar</span>
@@ -13,7 +15,7 @@ export default function Footer() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-x-10 gap-y-4 text-sm">
+        <div className="flex flex-wrap gap-x-10 gap-y-6 text-sm">
           <div>
             <p className="mb-2 text-xs uppercase tracking-wider text-white/35">Network</p>
             <ul className="space-y-1.5 text-white/60">
@@ -27,9 +29,31 @@ export default function Footer() {
             <p className="mb-2 text-xs uppercase tracking-wider text-white/35">Get in touch</p>
             <ul className="space-y-1.5 text-white/60">
               <li>
-                <a href="mailto:hello@arpansarkar.org" className="hover:text-lavender">
-                  hello@arpansarkar.org
+                <a href="mailto:contact@arpansarkar.org" className="hover:text-lavender">
+                  contact@arpansarkar.org
                 </a>
+              </li>
+              <li>
+                <a href="mailto:support@arpansarkar.org" className="hover:text-lavender">
+                  support@arpansarkar.org
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-wider text-white/35">Legal</p>
+            <ul className="space-y-1.5 text-white/60">
+              <li>
+                <Link to="/privacy" className="hover:text-lavender">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link to="/terms" className="hover:text-lavender">Terms & Conditions</Link>
+              </li>
+              <li>
+                <Link to="/refund-policy" className="hover:text-lavender">Refund Policy</Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-lavender">Contact Us</Link>
               </li>
             </ul>
           </div>
