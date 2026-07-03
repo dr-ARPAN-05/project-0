@@ -136,7 +136,7 @@ export default function AuthModal({ open, onClose }) {
                 </button>
                 <h3 className="font-display text-xl font-semibold text-white">Enter your email</h3>
                 <p className="mt-1 text-sm text-white/50">
-                  We'll send a sign-in link and a 8-digit code — use whichever's easier.
+                  We'll send a sign-in link and an 8-digit code — use whichever's easier.
                 </p>
                 <input
                   type="email"
@@ -172,8 +172,8 @@ export default function AuthModal({ open, onClose }) {
                   maxLength={8}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="00000000"
-                  className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-lg tracking-[0.4em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+                  placeholder="12345678"
+                  className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-base tracking-[0.25em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
                 />
                 {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
                 <button

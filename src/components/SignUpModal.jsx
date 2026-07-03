@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { signInWithEmailOtp, verifyEmailOtp } from '../lib/shared-auth';
 import InvisibleCaptcha from './InvisibleCaptcha.jsx';
 
-// Steps: 'form' -> name + email, 'code' -> enter the 6-digit code
+// Steps: 'form' -> name + email, 'code' -> enter the 8-digit code
 // Note: unlike sign-in, the signup confirmation email only carries a code,
 // no clickable link — so this step never mentions "click the link".
 export default function SignUpModal({ open, onClose }) {
@@ -130,7 +130,7 @@ export default function SignUpModal({ open, onClose }) {
                 </button>
                 <h3 className="font-display text-xl font-semibold text-white">Enter your code</h3>
                 <p className="mt-1 text-sm leading-relaxed text-white/50">
-                  We sent a 8-digit code to <span className="text-lavender">{email}</span>.
+                  We sent an 8-digit code to <span className="text-lavender">{email}</span>.
                 </p>
                 <input
                   type="text"
@@ -139,8 +139,8 @@ export default function SignUpModal({ open, onClose }) {
                   maxLength={8}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="00000000"
-                  className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-lg tracking-[0.4em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+                  placeholder="12345678"
+                  className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-base tracking-[0.25em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
                 />
                 {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
                 <button

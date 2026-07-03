@@ -96,7 +96,7 @@ export default function VerifyEmailGate({ children }) {
         <p className="mt-2 text-sm leading-relaxed text-white/55">
           {codeSent ? (
             <>
-              We sent a 6-digit code to{' '}
+              We sent an 8-digit code to{' '}
               <span className="text-lavender">{session.user.email}</span>. Enter it below to
               finish setting up your account.
             </>
@@ -110,16 +110,16 @@ export default function VerifyEmailGate({ children }) {
             type="text"
             inputMode="numeric"
             autoFocus
-            maxLength={6}
+            maxLength={8}
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            placeholder="123456"
-            className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-lg tracking-[0.4em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
+            placeholder="12345678"
+            className="mt-5 w-full rounded-lg border border-line bg-base px-4 py-2.5 text-center text-base tracking-[0.25em] text-white placeholder:tracking-normal placeholder:text-white/30 focus:border-violet/60 focus:outline-none"
           />
           {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
           <button
             type="submit"
-            disabled={busy || code.length !== 6}
+            disabled={busy || code.length !== 8}
             className="mt-5 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-50"
           >
             {busy ? 'Verifying…' : 'Verify & continue'}

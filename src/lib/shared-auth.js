@@ -84,10 +84,13 @@ export async function getProfile(userId) {
   if (!userId) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, is_admin, created_at')
+    .select('id, full_name, email, is_admin, is_verified, created_at')
     .eq('id', userId)
     .single();
-  if (error) return null;
+  if (error) {
+    console.error('[getProfile] failed to load profile:', error.message);
+    return null;
+  }
   return data;
 }
 
