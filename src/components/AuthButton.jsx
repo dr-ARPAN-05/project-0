@@ -1,35 +1,15 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getSession, onAuthStateChange, signOutEverywhere } from '../lib/shared-auth';
-
-// Deferred: JoinModal pulls in the hCaptcha library, which shouldn't cost
-// anyone page-load time until they actually click to sign up/log in.
-const JoinModal = lazy(() => import('./JoinModal.jsx'));
+import { useAuth } from '../auth/useAuth';
 
 export default function AuthButton({ className = '' }) {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [joinOpen, setJoinOpen] = useState(false);
-  const [joinMounted, setJoinMounted] = useState(false);
-
-  useEffect(() => {
-    getSession()
-      .then(setSession)
-      .finally(() => setLoading(false));
-    return onAuthStateChange(setSession);
-  }, []);
-
-  const openJoin = () => {
-    setJoinMounted(true);
-    setJoinOpen(true);
-  };
+  const { loading, isAuthenticated, user, signOut } = useAuth();
 
   if (loading) {
     return <div className={`h-9 w-24 animate-pulse rounded-full bg-panel ${className}`} />;
   }
 
-  if (session) {
-    const email = session.user?.email || '';
+  if (isAuthenticated) {
+    const email = user?.email || '';
     const initial = email.charAt(0).toUpperCase() || 'A';
     return (
       <div className={`flex items-center gap-2 ${className}`}>
@@ -40,7 +20,7 @@ export default function AuthButton({ className = '' }) {
           Dashboard
         </Link>
         <button
-          onClick={signOutEverywhere}
+          onClick={signOut}
           title={`Signed in as ${email} — click to sign out`}
           className="flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1.5 text-sm text-white/80 transition hover:border-violet/50 hover:text-white"
         >
@@ -55,17 +35,12 @@ export default function AuthButton({ className = '' }) {
 
   return (
     <div className={`flex ${className}`}>
-      <button
-        onClick={openJoin}
+      <Link
+        to="/signup"
         className="rounded-full bg-violet px-5 py-2 text-sm font-semibold text-white transition hover:bg-violet-soft"
       >
         JOIN US!
-      </button>
-      {joinMounted && (
-        <Suspense fallback={null}>
-          <JoinModal open={joinOpen} onClose={() => setJoinOpen(false)} />
-        </Suspense>
-      )}
+      </Link>
     </div>
   );
 }

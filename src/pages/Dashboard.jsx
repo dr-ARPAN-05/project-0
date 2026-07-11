@@ -1,49 +1,17 @@
-import { useEffect, useState } from 'react';
-import { getSession, onAuthStateChange, getProfile, signOutEverywhere } from '../lib/shared-auth';
+import { useAuth } from '../auth/useAuth';
 import ScoreCard from '../components/dashboard/ScoreCard.jsx';
 import StudentPurchases from '../components/dashboard/StudentPurchases.jsx';
 import AdminOrders from '../components/dashboard/AdminOrders.jsx';
 import NamePrompt from '../components/dashboard/NamePrompt.jsx';
 import SEO from '../components/SEO.jsx';
 
+// Auth is already resolved by the time this renders — App.jsx wraps this
+// route in <ProtectedRoute requireVerified>, so we only ever get here with
+// a session, a loaded profile, and a verified email. No loading/session
+// branching needed here anymore.
 export default function Dashboard() {
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { session, profile, isAdmin, signOut, refreshProfile } = useAuth();
 
-  useEffect(() => {
-    (async () => {
-      const s = await getSession();
-      setSession(s);
-      if (s) setProfile(await getProfile(s.user.id));
-      setLoading(false);
-    })();
-    return onAuthStateChange(async (s) => {
-      setSession(s);
-      setProfile(s ? await getProfile(s.user.id) : null);
-    });
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-base">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-base px-6 text-center">
-        <p className="font-display text-xl text-white">Sign in to see your dashboard</p>
-        <a href="/" className="mt-4 text-amber underline underline-offset-4">
-          Back to homepage
-        </a>
-      </div>
-    );
-  }
-
-  const isAdmin = profile?.is_admin;
   const needsName = !profile?.full_name;
 
   return (
@@ -62,7 +30,7 @@ export default function Dashboard() {
             </h1>
           </div>
           <button
-            onClick={signOutEverywhere}
+            onClick={signOut}
             className="rounded-full border border-line px-4 py-2 text-sm text-white/70 transition hover:border-violet/50 hover:text-white"
           >
             Sign out
@@ -70,12 +38,7 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-10">
-          {needsName && (
-            <NamePrompt
-              userId={session.user.id}
-              onSaved={(name) => setProfile((p) => ({ ...p, full_name: name }))}
-            />
-          )}
+          {needsName && <NamePrompt userId={session.user.id} onSaved={refreshProfile} />}
 
           {isAdmin ? (
             <AdminOrders />

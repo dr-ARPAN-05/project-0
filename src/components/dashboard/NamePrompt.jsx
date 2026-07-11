@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { updateProfileName } from '../../lib/shared-auth';
+import { updateProfileName } from '../../auth/AuthService';
 
 // Only ever shown when profile.full_name is empty. Once saved, the parent
 // removes this from the tree (profile.full_name is now set) and the
