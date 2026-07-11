@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { signInWithPassword, signInWithEmailOtp, verifyEmailOtp } from '../AuthService';
+import { signInWithPassword, signInWithEmailOtp, verifyEmailOtp, confirmEmailVerification } from '../AuthService';
 import { CODE_LENGTH } from '../authTypes';
 import AuthLayout from '../components/AuthLayout.jsx';
 import OAuthButtons from '../components/OAuthButtons.jsx';
@@ -63,6 +63,11 @@ export default function Login() {
     setBusy(true);
     try {
       await verifyEmailOtp(email, code);
+      try {
+        await confirmEmailVerification();
+      } catch (confirmErr) {
+        console.error('[Login] confirmEmailVerification failed:', confirmErr.message);
+      }
       navigate(next, { replace: true });
     } catch (err) {
       setError(err.message);

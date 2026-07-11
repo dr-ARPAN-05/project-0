@@ -25,6 +25,7 @@
  * @property {Session|null} session
  * @property {Profile|null} profile
  * @property {boolean} loading            - true until the first session check resolves
+ * @property {boolean} profileLoading      - true while the profile for the current session is being fetched
  * @property {boolean} isAuthenticated
  * @property {boolean} isAdmin
  * @property {boolean} needsEmailVerification

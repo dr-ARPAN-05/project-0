@@ -115,22 +115,6 @@ export default function Terms() {
           Questions about these terms — email <EmailLink address="contact@arpansarkar.org" />.
         </p>
       </Section>
-
-      <Section title="Business details">
-        <p>
-          Legal name: Arpan Sarkar
-          <br />
-          Trade name: Arpan Sarkar
-          <br />
-          Operated as an individual — not a registered company or business entity.
-          <br />
-          Address: 24-5-580-9/1, Attavara 6th Cross Road, Mangaluru, Karnataka, India
-          <br />
-          Phone: {import.meta.env.VITE_CONTACT_PHONE}
-          <br />
-          Email: <EmailLink address="contact@arpansarkar.org" />
-        </p>
-      </Section>
     </LegalLayout>
   );
 }

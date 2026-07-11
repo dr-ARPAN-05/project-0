@@ -28,6 +28,13 @@ export default function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  // True whenever a profile fetch for the CURRENT session is in flight.
+  // Distinct from `loading` (which only covers the initial session check) —
+  // this exists so ProtectedRoute can wait for the profile to actually
+  // resolve before deciding whether to show verification/admin content,
+  // instead of treating "profile not fetched yet" the same as "no
+  // verification needed" and flashing the wrong screen.
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Guards against a stale profile fetch (from a previous session/user)
   // resolving after a newer one has already started — the classic race
@@ -39,12 +46,19 @@ export default function AuthProvider({ children }) {
     const user = nextSession?.user ?? null;
 
     if (!user) {
-      if (requestId === requestIdRef.current) setProfile(null);
+      if (requestId === requestIdRef.current) {
+        setProfile(null);
+        setProfileLoading(false);
+      }
       return;
     }
 
+    if (requestId === requestIdRef.current) setProfileLoading(true);
     const p = await ensureProfile(user);
-    if (requestId === requestIdRef.current) setProfile(p);
+    if (requestId === requestIdRef.current) {
+      setProfile(p);
+      setProfileLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -81,6 +95,7 @@ export default function AuthProvider({ children }) {
     session,
     profile,
     loading,
+    profileLoading,
     isAuthenticated: !!session,
     isAdmin: !!profile?.is_admin,
     needsEmailVerification: !!session && !!profile && profile.is_verified === false,

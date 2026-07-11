@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { signUpWithPassword, verifySignupOtp } from '../AuthService';
+import { signUpWithPassword, verifySignupOtp, confirmEmailVerification } from '../AuthService';
 import { CODE_LENGTH } from '../authTypes';
 import AuthLayout from '../components/AuthLayout.jsx';
 import OAuthButtons from '../components/OAuthButtons.jsx';
@@ -43,6 +43,16 @@ export default function Signup() {
     setBusy(true);
     try {
       await verifySignupOtp(email, code);
+      // verifySignupOtp() already confirmed the email at Supabase's auth
+      // level — flip is_verified here too so ProtectedRoute doesn't ask
+      // for a SECOND code the moment they land on /dashboard. Best-effort:
+      // if this fails for some reason, the dashboard's own verify gate is
+      // still there as a fallback, so we don't block navigation on it.
+      try {
+        await confirmEmailVerification();
+      } catch (confirmErr) {
+        console.error('[Signup] confirmEmailVerification failed:', confirmErr.message);
+      }
       navigate(next, { replace: true });
     } catch (err) {
       setError(err.message);

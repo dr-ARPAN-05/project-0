@@ -40,10 +40,16 @@ function NotAuthorized() {
  * @param {{children: React.ReactNode, requireAdmin?: boolean, requireVerified?: boolean}} props
  */
 export default function ProtectedRoute({ children, requireAdmin = false, requireVerified = false }) {
-  const { loading, isAuthenticated, isAdmin, needsEmailVerification } = useAuth();
+  const { loading, profileLoading, isAuthenticated, isAdmin, needsEmailVerification } = useAuth();
 
   if (loading) return <FullScreenSpinner />;
   if (!isAuthenticated) return <SignInPrompt />;
+  // Wait for the profile fetch to settle before deciding admin/verification
+  // access. Without this, a signed-in user with a not-yet-loaded profile
+  // (e.g. right after an OAuth redirect) briefly renders `children`, then
+  // gets yanked back out the moment the profile resolves — that flash is
+  // what shows up as a "blank dashboard" for Google sign-ins.
+  if (profileLoading) return <FullScreenSpinner />;
   if (requireAdmin && !isAdmin) return <NotAuthorized />;
   if (requireVerified && needsEmailVerification) return <VerifyEmailPrompt />;
 

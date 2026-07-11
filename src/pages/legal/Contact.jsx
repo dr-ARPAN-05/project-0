@@ -39,20 +39,8 @@ export default function Contact() {
         </p>
       </Section>
 
-      <Section title="Address & business details">
-        <p>
-          Arpan Sarkar
-          <br />
-          24-5-580-9/1, Attavara 6th Cross Road
-          <br />
-          Mangaluru, Karnataka, India
-          <br />
-          Phone: {import.meta.env.VITE_CONTACT_PHONE}
-        </p>
-        <p className="mt-3">
-          Legal name: Arpan Sarkar. Trade name: Arpan Sarkar. Operated as an individual — not a
-          registered company or business entity.
-        </p>
+      <Section title="Location">
+        <p>Mangaluru, Karnataka, India. Arpan Sarkar operates this platform as an individual, not a registered business.</p>
       </Section>
 
       <Section title="Response time">
