@@ -1,8 +1,14 @@
 import { LegalLayout, Section, List, EmailLink } from '../../components/legal/LegalPrimitives.jsx';
+import SEO from '../../components/SEO.jsx';
 
 export default function Privacy() {
   return (
     <LegalLayout title="Privacy Policy" lastUpdated="July 2026">
+      <SEO
+        title="Privacy Policy — arpansarkar.org"
+        description="How arpansarkar.org collects, uses, and protects your data across the mentorship, resources, cutoffs, and counselling network."
+        path="/privacy"
+      />
       <Section title="Overview">
         <p>
           arpansarkar.org (and every subdomain under it — mentorship.arpansarkar.org, and any

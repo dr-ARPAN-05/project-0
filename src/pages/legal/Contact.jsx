@@ -1,8 +1,14 @@
 import { LegalLayout, Section, EmailLink } from '../../components/legal/LegalPrimitives.jsx';
+import SEO from '../../components/SEO.jsx';
 
 export default function Contact() {
   return (
     <LegalLayout title="Contact Us" lastUpdated="July 2026">
+      <SEO
+        title="Contact Us — arpansarkar.org"
+        description="Get in touch with Arpan Sarkar for mentorship, support, or general questions about arpansarkar.org."
+        path="/contact"
+      />
       <Section title="Where to reach us">
         <p>Different inboxes for different things — this gets your message to the right place faster.</p>
 

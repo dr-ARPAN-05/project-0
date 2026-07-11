@@ -1,8 +1,14 @@
 import { LegalLayout, Section, List, EmailLink } from '../../components/legal/LegalPrimitives.jsx';
+import SEO from '../../components/SEO.jsx';
 
 export default function Terms() {
   return (
     <LegalLayout title="Terms & Conditions" lastUpdated="July 2026">
+      <SEO
+        title="Terms & Conditions — arpansarkar.org"
+        description="Terms of use for arpansarkar.org's mentorship, resources, cutoffs, and counselling services."
+        path="/terms"
+      />
       <Section title="About these terms">
         <p>
           arpansarkar.org and every subdomain under it are operated by Arpan Sarkar, an

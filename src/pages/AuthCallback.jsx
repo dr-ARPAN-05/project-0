@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import SEO from '../components/SEO.jsx';
 
 // Reads ?next= and redirects there once Supabase finishes processing the
 // OAuth redirect. Every app on arpansarkar.org needs this exact route.
@@ -32,6 +33,7 @@ export default function AuthCallback() {
 
   return (
     <div className="min-h-screen bg-base flex items-center justify-center px-6">
+      <SEO title="Signing in… — arpansarkar.org" path="/auth/callback" noindex />
       <div className="text-center">
         {error ? (
           <>

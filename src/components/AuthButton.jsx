@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getSession, onAuthStateChange, signOutEverywhere } from '../lib/shared-auth';
-import JoinModal from './JoinModal.jsx';
+
+// Deferred: JoinModal pulls in the hCaptcha library, which shouldn't cost
+// anyone page-load time until they actually click to sign up/log in.
+const JoinModal = lazy(() => import('./JoinModal.jsx'));
 
 export default function AuthButton({ className = '' }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [joinMounted, setJoinMounted] = useState(false);
 
   useEffect(() => {
     getSession()
@@ -14,6 +18,11 @@ export default function AuthButton({ className = '' }) {
       .finally(() => setLoading(false));
     return onAuthStateChange(setSession);
   }, []);
+
+  const openJoin = () => {
+    setJoinMounted(true);
+    setJoinOpen(true);
+  };
 
   if (loading) {
     return <div className={`h-9 w-24 animate-pulse rounded-full bg-panel ${className}`} />;
@@ -47,12 +56,16 @@ export default function AuthButton({ className = '' }) {
   return (
     <div className={`flex ${className}`}>
       <button
-        onClick={() => setJoinOpen(true)}
+        onClick={openJoin}
         className="rounded-full bg-violet px-5 py-2 text-sm font-semibold text-white transition hover:bg-violet-soft"
       >
         JOIN US!
       </button>
-      <JoinModal open={joinOpen} onClose={() => setJoinOpen(false)} />
+      {joinMounted && (
+        <Suspense fallback={null}>
+          <JoinModal open={joinOpen} onClose={() => setJoinOpen(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }

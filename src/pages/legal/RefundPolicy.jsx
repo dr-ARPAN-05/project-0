@@ -1,8 +1,14 @@
 import { LegalLayout, Section, EmailLink } from '../../components/legal/LegalPrimitives.jsx';
+import SEO from '../../components/SEO.jsx';
 
 export default function RefundPolicy() {
   return (
     <LegalLayout title="Refund Policy" lastUpdated="July 2026">
+      <SEO
+        title="Refund Policy — arpansarkar.org"
+        description="Refund and rescheduling policy for mentorship sessions and resources on arpansarkar.org."
+        path="/refund-policy"
+      />
       <Section title="All payments are final">
         <p>
           Payments made on arpansarkar.org and its subdomains — including mentorship sessions,
