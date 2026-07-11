@@ -9,6 +9,7 @@
  * @property {string} id
  * @property {string|null} full_name
  * @property {string} email
+ * @property {string|null} class_level
  * @property {boolean} is_admin
  * @property {boolean} is_verified
  * @property {string} created_at
@@ -29,7 +30,7 @@
  * @property {boolean} isAuthenticated
  * @property {boolean} isAdmin
  * @property {boolean} needsEmailVerification
- * @property {boolean} needsName
+ * @property {boolean} needsOnboarding    - true when name and/or class haven't been set yet
  * @property {() => Promise<void>} refreshProfile
  * @property {() => Promise<void>} signOut
  */
@@ -44,5 +45,15 @@ export const OTP_TYPE = {
   EMAIL: 'email',
   RECOVERY: 'recovery',
 };
+
+// Matches the `class_level` CHECK constraint on profiles — keep in sync
+// with the SQL migration.
+export const CLASS_LEVELS = [
+  { value: '11th', label: '11th' },
+  { value: '12th', label: '12th' },
+  { value: 'drop_1', label: '1st Drop' },
+  { value: 'drop_2', label: '2nd Drop' },
+  { value: 'drop_3_plus', label: '3+ Drop' },
+];
 
 export {};

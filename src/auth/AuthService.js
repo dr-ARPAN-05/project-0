@@ -287,7 +287,7 @@ export async function getProfile(userId) {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email, is_admin, is_verified, created_at')
+      .select('id, full_name, email, class_level, is_admin, is_verified, created_at')
       .eq('id', userId)
       .maybeSingle();
     if (error) throw error;
@@ -320,7 +320,7 @@ export async function ensureProfile(user) {
         email: user.email,
         full_name: user.user_metadata?.full_name ?? null,
       })
-      .select('id, full_name, email, is_admin, is_verified, created_at')
+      .select('id, full_name, email, class_level, is_admin, is_verified, created_at')
       .single();
 
     if (error) {
@@ -350,6 +350,31 @@ export async function updateProfileName(userId, fullName) {
     if (error) throw error;
   } catch (err) {
     console.error('[AuthService.updateProfileName] failed:', err.message);
+    throw err;
+  }
+}
+
+/**
+ * The one-time onboarding step, asked together in a single popup for both
+ * email and Google sign-ups: name + class. full_name can only ever be set
+ * once (enforced by the protect_profile_columns DB trigger); class_level
+ * is left freely editable since a student's year changes.
+ * @param {string} userId
+ * @param {{fullName: string, classLevel: string}} data
+ * @returns {Promise<import('./authTypes').Profile>}
+ */
+export async function completeOnboarding(userId, { fullName, classLevel }) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName, class_level: classLevel })
+      .eq('id', userId)
+      .select('id, full_name, email, class_level, is_admin, is_verified, created_at')
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('[AuthService.completeOnboarding] failed:', err.message);
     throw err;
   }
 }

@@ -1,5 +1,4 @@
 import { useAuth } from './useAuth';
-import VerifyEmailPrompt from './components/VerifyEmailPrompt.jsx';
 
 function FullScreenSpinner() {
   return (
@@ -33,25 +32,26 @@ function NotAuthorized() {
 
 /**
  * ProtectedRoute checks exactly three things, nothing more:
- *   loading      - is the initial session check still in flight?
+ *   loading      - is the initial session check (and, if signed in, the
+ *                  profile fetch) still in flight?
  *   authenticated - is there a session at all?
- *   authorized   - (optional) does this route need admin, or a verified email?
+ *   authorized   - (optional) does this route need admin?
  *
- * @param {{children: React.ReactNode, requireAdmin?: boolean, requireVerified?: boolean}} props
+ * Deliberately does NOT gate on email verification anymore — Google
+ * accounts are auto-verified at the DB trigger level (Google's own OAuth
+ * IS the verification), and password accounts get verified immediately
+ * after their signup code. Any leftover onboarding (name/class) is handled
+ * as a non-blocking overlay by the page itself, not by this route guard.
+ *
+ * @param {{children: React.ReactNode, requireAdmin?: boolean}} props
  */
-export default function ProtectedRoute({ children, requireAdmin = false, requireVerified = false }) {
-  const { loading, profileLoading, isAuthenticated, isAdmin, needsEmailVerification } = useAuth();
+export default function ProtectedRoute({ children, requireAdmin = false }) {
+  const { loading, profileLoading, isAuthenticated, isAdmin } = useAuth();
 
   if (loading) return <FullScreenSpinner />;
   if (!isAuthenticated) return <SignInPrompt />;
-  // Wait for the profile fetch to settle before deciding admin/verification
-  // access. Without this, a signed-in user with a not-yet-loaded profile
-  // (e.g. right after an OAuth redirect) briefly renders `children`, then
-  // gets yanked back out the moment the profile resolves — that flash is
-  // what shows up as a "blank dashboard" for Google sign-ins.
   if (profileLoading) return <FullScreenSpinner />;
   if (requireAdmin && !isAdmin) return <NotAuthorized />;
-  if (requireVerified && needsEmailVerification) return <VerifyEmailPrompt />;
 
   return children;
 }

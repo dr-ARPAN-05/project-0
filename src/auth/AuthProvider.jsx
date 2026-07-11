@@ -99,7 +99,7 @@ export default function AuthProvider({ children }) {
     isAuthenticated: !!session,
     isAdmin: !!profile?.is_admin,
     needsEmailVerification: !!session && !!profile && profile.is_verified === false,
-    needsName: !!session && !!profile && !profile.full_name,
+    needsOnboarding: !!session && !!profile && (!profile.full_name || !profile.class_level),
     refreshProfile,
     signOut: signOutEverywhere,
   };

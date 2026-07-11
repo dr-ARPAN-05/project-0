@@ -2,17 +2,16 @@ import { useAuth } from '../auth/useAuth';
 import ScoreCard from '../components/dashboard/ScoreCard.jsx';
 import StudentPurchases from '../components/dashboard/StudentPurchases.jsx';
 import AdminOrders from '../components/dashboard/AdminOrders.jsx';
-import NamePrompt from '../components/dashboard/NamePrompt.jsx';
+import OnboardingModal from '../components/dashboard/OnboardingModal.jsx';
 import SEO from '../components/SEO.jsx';
 
 // Auth is already resolved by the time this renders — App.jsx wraps this
-// route in <ProtectedRoute requireVerified>, so we only ever get here with
-// a session, a loaded profile, and a verified email. No loading/session
-// branching needed here anymore.
+// route in <ProtectedRoute>, so we only ever get here with a session and a
+// loaded profile. Onboarding (name + class) is rendered as an OVERLAY on
+// top of this component, never in place of it — the dashboard itself is
+// always mounted, so there's no swap-in/swap-out that could blank the page.
 export default function Dashboard() {
-  const { session, profile, isAdmin, signOut, refreshProfile } = useAuth();
-
-  const needsName = !profile?.full_name;
+  const { session, profile, isAdmin, signOut, needsOnboarding, refreshProfile } = useAuth();
 
   return (
     <div className="min-h-screen bg-base px-5 py-10 md:py-14">
@@ -38,8 +37,6 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-10">
-          {needsName && <NamePrompt userId={session.user.id} onSaved={refreshProfile} />}
-
           {isAdmin ? (
             <AdminOrders />
           ) : (
@@ -53,6 +50,14 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {needsOnboarding && (
+        <OnboardingModal
+          userId={session.user.id}
+          prefillName={session.user.user_metadata?.full_name || ''}
+          onSaved={refreshProfile}
+        />
+      )}
     </div>
   );
 }
