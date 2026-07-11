@@ -3,6 +3,8 @@ import { getSession, onAuthStateChange, getProfile, signOutEverywhere } from '..
 import ScoreCard from '../components/dashboard/ScoreCard.jsx';
 import StudentPurchases from '../components/dashboard/StudentPurchases.jsx';
 import AdminOrders from '../components/dashboard/AdminOrders.jsx';
+import NamePrompt from '../components/dashboard/NamePrompt.jsx';
+import SEO from '../components/SEO.jsx';
 
 export default function Dashboard() {
   const [session, setSession] = useState(null);
@@ -42,9 +44,11 @@ export default function Dashboard() {
   }
 
   const isAdmin = profile?.is_admin;
+  const needsName = !profile?.full_name;
 
   return (
     <div className="min-h-screen bg-base px-5 py-10 md:py-14">
+      <SEO title="Dashboard — arpansarkar.org" path="/dashboard" noindex />
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -66,6 +70,13 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-10">
+          {needsName && (
+            <NamePrompt
+              userId={session.user.id}
+              onSaved={(name) => setProfile((p) => ({ ...p, full_name: name }))}
+            />
+          )}
+
           {isAdmin ? (
             <AdminOrders />
           ) : (
