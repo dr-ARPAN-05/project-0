@@ -102,6 +102,11 @@ export default function Privacy() {
         <p>
           Questions about this policy or your data — email <EmailLink address="contact@arpansarkar.org" />.
         </p>
+        <p>
+          Arpan Sarkar, 24-5-580-9/1, Attavara 6th Cross Road, Mangaluru, Karnataka, India.
+          <br />
+          Phone: {import.meta.env.VITE_CONTACT_PHONE}
+        </p>
       </Section>
     </LegalLayout>
   );
