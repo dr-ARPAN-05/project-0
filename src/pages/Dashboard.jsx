@@ -1,6 +1,7 @@
 import { useAuth } from '../auth/useAuth';
 import ScoreCard from '../components/dashboard/ScoreCard.jsx';
-import StudentPurchases from '../components/dashboard/StudentPurchases.jsx';
+import ServicesGrid from '../components/dashboard/ServicesGrid.jsx';
+import PurchasesTable from '../components/dashboard/PurchasesTable.jsx';
 import AdminOrders from '../components/dashboard/AdminOrders.jsx';
 import OnboardingModal from '../components/dashboard/OnboardingModal.jsx';
 import SEO from '../components/SEO.jsx';
@@ -42,9 +43,15 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-10">
               <ScoreCard profile={profile} session={session} />
+
+              <div>
+                <h2 className="mb-4 font-display text-lg font-semibold text-white">Services</h2>
+                <ServicesGrid />
+              </div>
+
               <div>
                 <h2 className="mb-4 font-display text-lg font-semibold text-white">Your purchases</h2>
-                <StudentPurchases userId={session.user.id} />
+                <PurchasesTable userId={session.user.id} />
               </div>
             </div>
           )}

@@ -53,13 +53,13 @@ export default function ScoreCard({ profile, session }) {
       <div className="grid grid-cols-2 gap-4 text-center">
         <div>
           <p className="font-display text-2xl font-bold text-white">{stats.count}</p>
-          <p className="mt-1 text-xs text-white/45">sessions booked</p>
+          <p className="mt-1 text-xs text-white/45">purchases made</p>
         </div>
         <div>
           <p className="font-display text-2xl font-bold text-white">
             ₹{(stats.totalPaise / 100).toLocaleString('en-IN')}
           </p>
-          <p className="mt-1 text-xs text-white/45">total invested</p>
+          <p className="mt-1 text-xs text-white/45">your donations</p>
         </div>
       </div>
 
