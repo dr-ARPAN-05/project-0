@@ -33,10 +33,15 @@ export const SUBDOMAIN_APPS = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
+  const [showMentorshipPrompt, setShowMentorshipPrompt] = useState(false);
 
   const openApp = (app) => {
     setMobileOpen(false);
-    setActiveModal(app);
+    if (app.id === 'mentorship') {
+      setShowMentorshipPrompt(true);
+    } else {
+      setActiveModal(app);
+    }
   };
 
   return (
@@ -109,6 +114,35 @@ export default function Navbar() {
         )}
       </header>
 
+      {/* Confirmation Modal for Mentorship */}
+      {showMentorshipPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-line bg-base p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white font-display">Mentorship Platform</h3>
+            <p className="mt-2 text-sm leading-relaxed text-white/70">
+              The webapp is ready, but continuous upgrades are occurring. Do you want to proceed?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowMentorshipPrompt(false)}
+                className="rounded-lg border border-line/80 px-4 py-2 text-sm text-white/70 transition hover:bg-panel hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = 'https://mentorship.arpansarkar.org';
+                }}
+                className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber/90"
+              >
+                Yes, proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback ComingSoon Modal for other subdomains */}
       <ComingSoonModal app={activeModal} onClose={() => setActiveModal(null)} />
     </>
   );
