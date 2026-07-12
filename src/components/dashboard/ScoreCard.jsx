@@ -12,10 +12,10 @@ export default function ScoreCard({ profile, session }) {
       .select('amount_paise, status')
       .eq('user_id', session.user.id)
       .then(({ data }) => {
-        const verified = (data || []).filter((p) => p.status === 'verified');
+        const paid = (data || []).filter((p) => p.status === 'paid');
         setStats({
-          count: verified.length,
-          totalPaise: verified.reduce((sum, p) => sum + p.amount_paise, 0),
+          count: paid.length,
+          totalPaise: paid.reduce((sum, p) => sum + p.amount_paise, 0),
         });
       });
   }, [session]);

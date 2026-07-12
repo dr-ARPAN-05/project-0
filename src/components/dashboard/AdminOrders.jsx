@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 
 const STATUS_STYLES = {
-  verified: { label: 'Success', className: 'bg-green-500/10 text-green-400 border-green-500/30' },
+  paid: { label: 'Success', className: 'bg-green-500/10 text-green-400 border-green-500/30' },
   pending: { label: 'Processing', className: 'bg-amber/10 text-amber border-amber/30' },
   failed: { label: 'Failed', className: 'bg-red-500/10 text-red-400 border-red-500/30' },
   refunded: { label: 'Refunded', className: 'bg-white/10 text-white/60 border-white/20' },
 };
 
-const FILTERS = ['all', 'verified', 'pending', 'failed', 'refunded'];
+const FILTERS = ['all', 'paid', 'pending', 'failed', 'refunded'];
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -19,7 +19,7 @@ export default function AdminOrders() {
   useEffect(() => {
     supabase
       .from('purchases')
-      .select('id, product_type, amount_paise, status, created_at, profiles(full_name, email)')
+      .select('id, product, plan_name, amount_paise, status, created_at, profiles(full_name, email)')
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) setError(error.message);
@@ -61,7 +61,7 @@ export default function AdminOrders() {
             <thead>
               <tr className="border-b border-line bg-panel text-xs uppercase tracking-wide text-white/40">
                 <th className="whitespace-nowrap px-4 py-3">Student</th>
-                <th className="whitespace-nowrap px-4 py-3">Product</th>
+                <th className="whitespace-nowrap px-4 py-3">Plan</th>
                 <th className="whitespace-nowrap px-4 py-3">Amount</th>
                 <th className="whitespace-nowrap px-4 py-3">Status</th>
                 <th className="whitespace-nowrap px-4 py-3">Date</th>
@@ -76,8 +76,9 @@ export default function AdminOrders() {
                       <p className="text-white">{o.profiles?.full_name || '—'}</p>
                       <p className="text-xs text-white/40">{o.profiles?.email}</p>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 capitalize text-white/70">
-                      {o.product_type.replace(/_/g, ' ')}
+                    <td className="whitespace-nowrap px-4 py-3 text-white/70">
+                      {o.plan_name}
+                      <span className="ml-1.5 text-[10px] uppercase text-white/25">{o.product}</span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-white/70">
                       ₹{(o.amount_paise / 100).toLocaleString('en-IN')}
