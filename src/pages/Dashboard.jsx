@@ -1,10 +1,17 @@
+import { useState } from 'react';
 import { useAuth } from '../auth/useAuth';
 import ScoreCard from '../components/dashboard/ScoreCard.jsx';
 import ServicesGrid from '../components/dashboard/ServicesGrid.jsx';
 import PurchasesTable from '../components/dashboard/PurchasesTable.jsx';
 import AdminOrders from '../components/dashboard/AdminOrders.jsx';
+import AdminPlans from '../components/dashboard/AdminPlans.jsx';
 import OnboardingModal from '../components/dashboard/OnboardingModal.jsx';
 import SEO from '../components/SEO.jsx';
+
+const ADMIN_TABS = [
+  { id: 'orders', label: 'Orders' },
+  { id: 'plans', label: 'Plans' },
+];
 
 // Auth is already resolved by the time this renders — App.jsx wraps this
 // route in <ProtectedRoute>, so we only ever get here with a session and a
@@ -13,6 +20,7 @@ import SEO from '../components/SEO.jsx';
 // always mounted, so there's no swap-in/swap-out that could blank the page.
 export default function Dashboard() {
   const { session, profile, isAdmin, signOut, needsOnboarding, refreshProfile } = useAuth();
+  const [adminTab, setAdminTab] = useState('orders');
 
   return (
     <div className="min-h-screen bg-base px-5 py-10 md:py-14">
@@ -39,7 +47,23 @@ export default function Dashboard() {
 
         <div className="mt-10">
           {isAdmin ? (
-            <AdminOrders />
+            <div>
+              <div className="mb-6 flex gap-2">
+                {ADMIN_TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setAdminTab(t.id)}
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                      adminTab === t.id ? 'bg-violet text-white' : 'border border-line text-white/60 hover:text-white'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {adminTab === 'orders' && <AdminOrders />}
+              {adminTab === 'plans' && <AdminPlans />}
+            </div>
           ) : (
             <div className="space-y-10">
               <ScoreCard profile={profile} session={session} />

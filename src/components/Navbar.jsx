@@ -1,15 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AuthButton from './AuthButton.jsx';
 import ComingSoonModal from './ComingSoonModal.jsx';
 
 export const SUBDOMAIN_APPS = [
-  {
-    id: 'mentorship',
-    name: 'Mentorship',
-    subdomain: 'mentorship.arpansarkar.org',
-    blurb: '1:1 and group sessions with Arpan — booking, calendars and payments, live soon.',
-  },
   {
     id: 'resources',
     name: 'Resources',
@@ -33,15 +28,10 @@ export const SUBDOMAIN_APPS = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
-  const [showMentorshipPrompt, setShowMentorshipPrompt] = useState(false);
 
   const openApp = (app) => {
     setMobileOpen(false);
-    if (app.id === 'mentorship') {
-      setShowMentorshipPrompt(true);
-    } else {
-      setActiveModal(app);
-    }
+    setActiveModal(app);
   };
 
   return (
@@ -54,6 +44,12 @@ export default function Navbar() {
           </a>
 
           <div className="hidden items-center gap-1 md:flex">
+            <a
+              href="https://mentorship.arpansarkar.org"
+              className="rounded-full px-3.5 py-2 text-sm text-white/70 transition hover:bg-panel hover:text-white"
+            >
+              Mentorship
+            </a>
             {SUBDOMAIN_APPS.map((app) => (
               <button
                 key={app.id}
@@ -63,6 +59,12 @@ export default function Navbar() {
                 {app.name}
               </button>
             ))}
+            <Link
+              to="/plans"
+              className="rounded-full px-3.5 py-2 text-sm text-white/70 transition hover:bg-panel hover:text-white"
+            >
+              Plans
+            </Link>
           </div>
 
           <div className="hidden md:block">
@@ -97,6 +99,12 @@ export default function Navbar() {
             className="border-t border-line/70 bg-base px-5 pb-5 md:hidden"
           >
             <div className="flex flex-col gap-1 pt-3">
+              <a
+                href="https://mentorship.arpansarkar.org"
+                className="rounded-lg px-3 py-2.5 text-left text-sm text-white/70 hover:bg-panel hover:text-white"
+              >
+                Mentorship
+              </a>
               {SUBDOMAIN_APPS.map((app) => (
                 <button
                   key={app.id}
@@ -106,6 +114,13 @@ export default function Navbar() {
                   {app.name}
                 </button>
               ))}
+              <Link
+                to="/plans"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-left text-sm text-white/70 hover:bg-panel hover:text-white"
+              >
+                Plans
+              </Link>
               <div className="mt-2 border-t border-line/70 pt-4">
                 <AuthButton className="w-full justify-center" />
               </div>
@@ -114,35 +129,6 @@ export default function Navbar() {
         )}
       </header>
 
-      {/* Confirmation Modal for Mentorship */}
-      {showMentorshipPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-line bg-base p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white font-display">Mentorship Platform</h3>
-            <p className="mt-2 text-sm leading-relaxed text-white/70">
-              The webapp is ready, but continuous upgrades are occurring. Do you want to proceed?
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setShowMentorshipPrompt(false)}
-                className="rounded-lg border border-line/80 px-4 py-2 text-sm text-white/70 transition hover:bg-panel hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  window.location.href = 'https://mentorship.arpansarkar.org';
-                }}
-                className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber/90"
-              >
-                Yes, proceed
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Fallback ComingSoon Modal for other subdomains */}
       <ComingSoonModal app={activeModal} onClose={() => setActiveModal(null)} />
     </>
   );
