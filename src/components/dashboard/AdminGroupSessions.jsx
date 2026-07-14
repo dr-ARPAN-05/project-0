@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Link2, Check, X } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { SLOT_LABELS } from '../../lib/mentorshipLabels';
 
@@ -7,6 +7,9 @@ export default function AdminGroupSessions() {
   const [sessions, setSessions] = useState([]);
   const [form, setForm] = useState({ plan_key: 'group_session', session_date: '', session_slot: '19:00', zoom_link: '', notes: '' });
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editLink, setEditLink] = useState('');
+  const [savingLink, setSavingLink] = useState(false);
 
   useEffect(() => {
     supabase
@@ -28,6 +31,32 @@ export default function AdminGroupSessions() {
   const remove = async (id) => {
     await supabase.from('group_sessions').delete().eq('id', id);
     setSessions((s) => s.filter((x) => x.id !== id));
+  };
+
+  const startEditLink = (s) => {
+    setEditingId(s.id);
+    setEditLink(s.zoom_link || '');
+  };
+
+  const cancelEditLink = () => {
+    setEditingId(null);
+    setEditLink('');
+  };
+
+  const saveLink = async (id) => {
+    setSavingLink(true);
+    const { data, error } = await supabase
+      .from('group_sessions')
+      .update({ zoom_link: editLink.trim() || null })
+      .eq('id', id)
+      .select()
+      .single();
+    if (!error && data) {
+      setSessions((s) => s.map((x) => (x.id === id ? data : x)));
+      setEditingId(null);
+      setEditLink('');
+    }
+    setSavingLink(false);
   };
 
   return (
@@ -69,7 +98,7 @@ export default function AdminGroupSessions() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-white/45">Zoom link</label>
+            <label className="mb-1 block text-xs text-white/45">Zoom link (optional now, can add later)</label>
             <input
               type="url"
               placeholder="https://zoom.us/j/..."
@@ -91,21 +120,64 @@ export default function AdminGroupSessions() {
       <div className="mt-4 space-y-2">
         {sessions.length === 0 && <p className="text-sm text-white/35">No sessions scheduled yet.</p>}
         {sessions.map((s) => (
-          <div key={s.id} className="flex items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3">
-            <span className="rounded-full bg-violet/15 px-2.5 py-1 text-[11px] font-medium text-lavender">
-              {s.plan_key === 'group_monthly' ? 'Monthly' : 'Single'}
-            </span>
-            <div className="flex-1">
-              <div className="text-sm text-white">
-                {new Date(s.session_date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <div key={s.id} className="rounded-xl border border-line bg-panel px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-violet/15 px-2.5 py-1 text-[11px] font-medium text-lavender">
+                {s.plan_key === 'group_monthly' ? 'Monthly' : 'Single'}
+              </span>
+              <div className="flex-1">
+                <div className="text-sm text-white">
+                  {new Date(s.session_date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </div>
+                <div className="text-xs text-white/40">{SLOT_LABELS[s.session_slot] || s.session_slot}</div>
               </div>
-              <div className="text-xs text-white/40">
-                {SLOT_LABELS[s.session_slot] || s.session_slot} {s.zoom_link && `· ${s.zoom_link}`}
-              </div>
+              {editingId !== s.id && (
+                <button
+                  onClick={() => startEditLink(s)}
+                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition ${
+                    s.zoom_link
+                      ? 'border-line text-white/60 hover:text-white'
+                      : 'border-amber-500/40 text-amber-400 hover:border-amber-500/70'
+                  }`}
+                >
+                  <Link2 size={12} /> {s.zoom_link ? 'Edit link' : 'Add link'}
+                </button>
+              )}
+              <button onClick={() => remove(s.id)} className="text-white/30 hover:text-red-400">
+                <Trash2 size={14} />
+              </button>
             </div>
-            <button onClick={() => remove(s.id)} className="text-white/30 hover:text-red-400">
-              <Trash2 size={14} />
-            </button>
+
+            {editingId === s.id && (
+              <div className="mt-3 flex items-center gap-2 border-t border-line pt-3">
+                <input
+                  autoFocus
+                  type="url"
+                  placeholder="https://zoom.us/j/..."
+                  value={editLink}
+                  onChange={(e) => setEditLink(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && saveLink(s.id)}
+                  className="flex-1 rounded-lg border border-line bg-base px-3 py-1.5 text-sm text-white placeholder:text-white/25"
+                />
+                <button
+                  onClick={() => saveLink(s.id)}
+                  disabled={savingLink}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet text-white transition hover:bg-violet-soft disabled:opacity-50"
+                >
+                  <Check size={14} />
+                </button>
+                <button
+                  onClick={cancelEditLink}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-white/50 hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {editingId !== s.id && s.zoom_link && (
+              <div className="mt-1 truncate pl-[52px] text-xs text-white/30">{s.zoom_link}</div>
+            )}
           </div>
         ))}
       </div>
