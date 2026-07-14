@@ -67,7 +67,6 @@ export default function Signup() {
       <AuthLayout
         title="Enter your code"
         subtitle={`We sent a ${CODE_LENGTH}-digit code to ${email}.`}
-        backTo="#"
       >
         <SEO title="Verify your email — arpansarkar.org" path="/signup" noindex />
         <form onSubmit={handleVerify}>
@@ -96,7 +95,7 @@ export default function Signup() {
   }
 
   return (
-    <AuthLayout title="Create your account" subtitle="One account, works on every app on arpansarkar.org.">
+    <AuthLayout title="Create your account" subtitle="One account, works on every app on arpansarkar.org." backTo="/login">
       <SEO title="Sign up — arpansarkar.org" path="/signup" noindex />
       <p className="mt-4 text-xs text-white/40">
         Already have an account?{' '}

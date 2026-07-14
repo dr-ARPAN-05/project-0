@@ -1,12 +1,10 @@
-import { Link } from 'react-router-dom';
+import BackButton from '../BackButton.jsx';
 
 export function LegalLayout({ title, lastUpdated, children }) {
   return (
     <div className="min-h-screen bg-base px-5 py-12 md:py-16">
+      <BackButton fallback="/" />
       <div className="mx-auto max-w-3xl">
-        <Link to="/" className="text-xs text-white/40 hover:text-white/70">
-          ← Back to homepage
-        </Link>
         <h1 className="mt-4 font-display text-3xl font-bold text-white md:text-4xl">{title}</h1>
         {lastUpdated && <p className="mt-2 text-xs text-white/40">Last updated: {lastUpdated}</p>}
         <div className="mt-10">{children}</div>

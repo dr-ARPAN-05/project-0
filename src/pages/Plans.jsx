@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import PlanCard from '../components/plans/PlanCard.jsx';
 import SEO from '../components/SEO.jsx';
+import BackButton from '../components/BackButton.jsx';
 
 const PRODUCT_LABELS = {
   mentorship: 'Mentorship',
@@ -32,6 +33,7 @@ export default function Plans() {
 
   return (
     <div className="min-h-screen bg-base px-5 py-16 md:py-20">
+      <BackButton fallback="/" />
       <SEO
         title="Plans — arpansarkar.org"
         description="Browse mentorship and other plans across the arpansarkar.org network."
