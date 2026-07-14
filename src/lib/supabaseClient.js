@@ -1,9 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
+import { cookieAuthStorage } from './cookieAuthStorage';
 
-// Cross-subdomain SSO relies on two things matching exactly across every
-// app on *.arpansarkar.org: the storageKey, and the cookie domain below
-// (set at the hosting/proxy or via a custom storage adapter if you move
-// off localStorage). Do not change either without updating every subdomain.
+// Cross-subdomain SSO relies on three things matching exactly across every
+// app on *.arpansarkar.org: the storageKey, the storage adapter
+// (cookieAuthStorage.js — copied verbatim into every subdomain app, same as
+// the whole src/auth/ folder), and the cookie domain it writes to
+// (`.arpansarkar.org`, computed inside that file). Do not change any of
+// these without updating every subdomain, or a session created on one app
+// will stop being visible on the others.
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -19,15 +23,9 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storageKey: 'arpansarkar-auth', // exact string — shared across every subdomain app
+    storage: cookieAuthStorage, // cookie-backed, not localStorage — see cookieAuthStorage.js
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true, // required for the OAuth callback flow
   },
 });
-
-// Cookie domain used when apps are deployed on production subdomains.
-// Only applied in production so local dev on localhost isn't broken.
-export const COOKIE_DOMAIN =
-  typeof window !== 'undefined' && window.location.hostname.endsWith('arpansarkar.org')
-    ? '.arpansarkar.org'
-    : undefined;
