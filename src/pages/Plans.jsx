@@ -26,7 +26,21 @@ export default function Plans() {
 
   useEffect(load, []);
 
-  const byProduct = plans.reduce((acc, p) => {
+  // Plans are visible to everyone (logged in or not); login is only
+  // required at checkout. Availability windows are enforced here for
+  // display AND again server-side in /api/create-order — this filter is
+  // just so nobody sees a plan they can't actually buy yet or anymore.
+  const now = Date.now();
+  const visible = plans.filter((p) => {
+    if (p.available_from && new Date(p.available_from).getTime() > now) return false;
+    if (p.available_to && new Date(p.available_to).getTime() < now) return false;
+    return true;
+  });
+
+  const bundles = visible.filter((p) => p.is_bundle);
+  const regular = visible.filter((p) => !p.is_bundle);
+
+  const byProduct = regular.reduce((acc, p) => {
     (acc[p.product] ||= []).push(p);
     return acc;
   }, {});
@@ -51,21 +65,34 @@ export default function Plans() {
 
         {loading ? (
           <div className="mt-10 h-8 w-8 animate-spin rounded-full border-2 border-violet border-t-transparent" />
-        ) : plans.length === 0 ? (
+        ) : visible.length === 0 ? (
           <p className="mt-10 text-sm text-white/40">No plans available right now — check back soon.</p>
         ) : (
-          Object.entries(byProduct).map(([product, productPlans]) => (
-            <div key={product} className="mt-12">
-              <h2 className="mb-4 font-display text-lg font-semibold text-white">
-                {PRODUCT_LABELS[product] || product}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {productPlans.map((plan) => (
-                  <PlanCard key={plan.plan_key} plan={plan} onClaimed={load} />
-                ))}
+          <>
+            {bundles.length > 0 && (
+              <div className="mt-12">
+                <h2 className="mb-4 font-display text-lg font-semibold text-white">Bundles &amp; deals</h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {bundles.map((plan) => (
+                    <PlanCard key={plan.plan_key} plan={plan} allPlans={plans} onClaimed={load} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            )}
+
+            {Object.entries(byProduct).map(([product, productPlans]) => (
+              <div key={product} className="mt-12">
+                <h2 className="mb-4 font-display text-lg font-semibold text-white">
+                  {PRODUCT_LABELS[product] || product}
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {productPlans.map((plan) => (
+                    <PlanCard key={plan.plan_key} plan={plan} allPlans={plans} onClaimed={load} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
         )}
       </div>
     </div>

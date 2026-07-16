@@ -4,6 +4,12 @@
 // server-side from the `plans` table, using the Supabase service-role key
 // (server-only, never exposed to the browser). Creates the Razorpay order
 // AND the matching `pending` purchase rows in one step.
+//
+// A `plan_key` here can point at a regular plan OR a bundle (plans.is_bundle
+// = true) — bundles are just rows in the same table with their own price, so
+// no special-casing is needed here. Unlocking every plan inside a bundle
+// happens automatically once the purchase is marked `paid` (see the
+// expand_bundle_purchase trigger in the SQL migration).
 
 import Razorpay from 'razorpay';
 import { createClient } from '@supabase/supabase-js';
@@ -45,6 +51,15 @@ export default async function handler(req, res) {
     if (plans.length !== new Set(planKeys).size) {
       return res.status(400).json({ error: 'One or more plans in your cart are no longer available.' });
     }
+
+    const now = new Date();
+    const unavailable = plans.find(
+      (p) => (p.available_from && new Date(p.available_from) > now) || (p.available_to && new Date(p.available_to) < now)
+    );
+    if (unavailable) {
+      return res.status(400).json({ error: `"${unavailable.name}" is not available for purchase right now.` });
+    }
+
     const freeInCart = plans.find((p) => p.price_paise === 0);
     if (freeInCart) {
       return res.status(400).json({ error: `"${freeInCart.name}" is free — claim it directly, no checkout needed.` });

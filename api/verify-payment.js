@@ -2,11 +2,15 @@
 // Body: { razorpay_order_id, razorpay_payment_id, razorpay_signature }
 // Verifies the HMAC signature Razorpay returns, then flips the matching
 // `pending` purchase rows (created in create-order.js) to `paid`. This is
-// the ONLY place a purchase ever becomes `paid` — the client can never
-// write that status itself (see protect_purchase_columns trigger).
+// the primary "mark as paid" path, run right after checkout in the user's
+// browser. /api/webhook.js is the reliability backstop for cases where the
+// browser loses connection before this ever runs — both funnel through the
+// same finalizeOrderPayment() helper so a purchase only ever becomes `paid`
+// in one place.
 
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { finalizeOrderPayment } from './_lib/finalizePurchase.js';
 
 const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -38,16 +42,25 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid payment signature.' });
     }
 
-    const { data: purchases, error: updateErr } = await supabaseAdmin
-      .from('purchases')
-      .update({ status: 'paid', razorpay_payment_id })
-      .eq('razorpay_order_id', razorpay_order_id)
-      .eq('user_id', user.id)
-      .eq('status', 'pending')
-      .select();
-    if (updateErr) throw updateErr;
+    const purchases = await finalizeOrderPayment(supabaseAdmin, {
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      userId: user.id, // ownership check — this endpoint is user-triggered, unlike the webhook
+    });
 
-    if (!purchases || purchases.length === 0) {
+    // Not necessarily an error: the webhook may have already finalized this
+    // order a moment earlier (e.g. slow network). Treat as success either way
+    // as long as the order belongs to this user and isn't still pending.
+    if (purchases.length === 0) {
+      const { data: already } = await supabaseAdmin
+        .from('purchases')
+        .select('*')
+        .eq('razorpay_order_id', razorpay_order_id)
+        .eq('user_id', user.id)
+        .eq('status', 'paid');
+      if (already && already.length > 0) {
+        return res.status(200).json({ success: true, purchases: already });
+      }
       return res.status(404).json({ error: 'No matching pending order found for this payment.' });
     }
 
