@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Users, User, Gift, ShoppingCart, Package, Tag } from 'lucide-react';
 import { useCart } from '../../lib/cart';
 import { supabase } from '../../lib/supabaseClient';
@@ -8,9 +8,18 @@ export default function PlanCard({ plan, allPlans, onClaimed }) {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState(null);
   const [claimed, setClaimed] = useState(false);
+  const [enrolled, setEnrolled] = useState(null); // count from plan_pool_enrollment_count RPC
+
+  useEffect(() => {
+    if (!plan.capacity && !plan.min_enrollment) return;
+    supabase
+      .rpc('plan_pool_enrollment_count', { p_plan_key: plan.plan_key })
+      .then(({ data }) => setEnrolled(typeof data === 'number' ? data : null));
+  }, [plan.plan_key, plan.capacity, plan.min_enrollment]);
 
   const isFree = plan.price_paise === 0;
   const inCart = items.some((i) => i.plan_key === plan.plan_key);
+  const isFull = enrolled != null && plan.capacity != null && plan.capacity - enrolled <= 0;
   const hasDiscount = plan.compare_at_price_paise > plan.price_paise;
   const discountPct = hasDiscount
     ? Math.round((1 - plan.price_paise / plan.compare_at_price_paise) * 100)
@@ -99,6 +108,17 @@ export default function PlanCard({ plan, allPlans, onClaimed }) {
         </p>
       )}
 
+      {enrolled != null && plan.min_enrollment && enrolled < plan.min_enrollment && (
+        <div className="mt-3 rounded-lg border border-amber/30 bg-amber/10 px-3 py-2 text-[11px] text-amber">
+          {enrolled}/{plan.min_enrollment} joined — batch starts once {plan.min_enrollment} enroll
+        </div>
+      )}
+      {enrolled != null && plan.capacity && (
+        <p className={`mt-2 text-[11px] font-medium ${plan.capacity - enrolled <= 0 ? 'text-red-400' : 'text-white/40'}`}>
+          {plan.capacity - enrolled <= 0 ? 'Full — check back soon' : `${plan.capacity - enrolled} spot${plan.capacity - enrolled === 1 ? '' : 's'} left`}
+        </p>
+      )}
+
       {plan.is_bundle && includedNames.length > 0 && (
         <div className="mt-4 rounded-lg border border-line/70 bg-base/60 p-3">
           <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-white/40">Includes</p>
@@ -141,10 +161,10 @@ export default function PlanCard({ plan, allPlans, onClaimed }) {
         ) : (
           <button
             onClick={() => addItem(plan)}
-            disabled={inCart}
+            disabled={inCart || isFull}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-violet py-2.5 text-sm font-semibold text-white transition hover:bg-violet-soft disabled:opacity-60"
           >
-            <ShoppingCart size={14} /> {inCart ? 'In cart' : 'Add to cart'}
+            <ShoppingCart size={14} /> {isFull ? 'Full — check back soon' : inCart ? 'In cart' : 'Add to cart'}
           </button>
         )}
         {claimError && <p className="mt-2 text-xs text-red-400">{claimError}</p>}

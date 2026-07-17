@@ -19,6 +19,8 @@ const BLANK_FORM = {
   available_to: '', // datetime-local string, blank = available forever
   is_bundle: false,
   bundle_plan_keys: [],
+  capacity: '', // blank = uncapped. Meaning depends on plan type — see AdminPlans capacity field hint.
+  min_enrollment: '', // group cohort plans only — batch doesn't "start" until this many join (informational, doesn't block purchases)
 };
 
 // datetime-local inputs want "YYYY-MM-DDTHH:mm" in LOCAL time, not ISO/UTC.
@@ -97,6 +99,8 @@ export default function AdminPlans() {
       available_to: toLocalInputValue(plan.available_to),
       is_bundle: !!plan.is_bundle,
       bundle_plan_keys: plan.bundle_plan_keys || [],
+      capacity: plan.capacity != null ? String(plan.capacity) : '',
+      min_enrollment: plan.min_enrollment != null ? String(plan.min_enrollment) : '',
     });
     setEditingId(plan.id);
     setError(null);
@@ -141,6 +145,8 @@ export default function AdminPlans() {
         available_to: form.available_to ? new Date(form.available_to).toISOString() : null,
         is_bundle: form.is_bundle,
         bundle_plan_keys: form.is_bundle ? form.bundle_plan_keys : null,
+        capacity: form.capacity ? Number(form.capacity) : null,
+        min_enrollment: form.min_enrollment ? Number(form.min_enrollment) : null,
       };
 
       if (
@@ -365,6 +371,35 @@ export default function AdminPlans() {
               className="w-full rounded-lg border border-line bg-base px-3 py-2 text-sm text-white"
             />
           </Field>
+          <Field label="Capacity (blank = uncapped)">
+            <input
+              type="number"
+              min="1"
+              value={form.capacity}
+              onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+              placeholder="e.g. 7, 14, 50"
+              className="w-full rounded-lg border border-line bg-base px-3 py-2 text-sm text-white placeholder:text-white/25"
+            />
+            <p className="mt-1 text-[11px] text-white/35">
+              Personal one-time/weekly: shared pool across every plan with the same scheduling type.
+              Group monthly/yearly: shared pool across all group cohort plans. Group one-time: per-batch
+              cap (set per batch in Group Sessions — this is just the default).
+            </p>
+          </Field>
+          <Field label="Min. enrollment to start (group cohorts only, blank = no threshold)">
+            <input
+              type="number"
+              min="1"
+              value={form.min_enrollment}
+              onChange={(e) => setForm((f) => ({ ...f, min_enrollment: e.target.value }))}
+              placeholder="e.g. 20"
+              className="w-full rounded-lg border border-line bg-base px-3 py-2 text-sm text-white placeholder:text-white/25"
+            />
+            <p className="mt-1 text-[11px] text-white/35">
+              Shown to buyers as "X/N joined — starts once N enroll." Doesn't block purchases past this
+              number, only gates the batch actually starting.
+            </p>
+          </Field>
         </div>
 
         <Field label="Features (one per line)">
@@ -451,6 +486,8 @@ export default function AdminPlans() {
                   {p.max_redemptions ? ` · max ${p.max_redemptions} claims` : ''}
                   {p.available_from && ` · from ${new Date(p.available_from).toLocaleDateString('en-IN')}`}
                   {p.available_to && ` · until ${new Date(p.available_to).toLocaleDateString('en-IN')}`}
+                  {p.capacity ? ` · cap ${p.capacity}` : ''}
+                  {p.min_enrollment ? ` · min ${p.min_enrollment} to start` : ''}
                 </div>
               </div>
               <button onClick={() => startEdit(p)} className="text-white/40 hover:text-white" title="Edit">

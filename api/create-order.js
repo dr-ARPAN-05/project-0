@@ -5,14 +5,15 @@
 // (server-only, never exposed to the browser). Creates the Razorpay order
 // AND the matching `pending` purchase rows in one step.
 //
-// A `plan_key` here can point at a regular plan OR a bundle (plans.is_bundle
-// = true) — bundles are just rows in the same table with their own price, so
-// no special-casing is needed here. Unlocking every plan inside a bundle
-// happens automatically once the purchase is marked `paid` (see the
-// expand_bundle_purchase trigger in the SQL migration).
+// A `plan_key` here can point at a regular plan, a bundle (plans.is_bundle
+// = true), OR a capacity-limited plan (personal one-time/weekly caps, group
+// cohort/batch caps) — see api/_lib/capacity.js for the pooling rules. Every
+// item in the cart is capacity-checked before the Razorpay order is created,
+// so nobody pays for a plan that's actually full.
 
 import Razorpay from 'razorpay';
 import { createClient } from '@supabase/supabase-js';
+import { checkPlanCapacity } from './_lib/capacity.js';
 
 const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -65,6 +66,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: `"${freeInCart.name}" is free — claim it directly, no checkout needed.` });
     }
 
+    // Capacity check every item BEFORE creating the Razorpay order — nobody
+    // should pay for a plan that's actually full. Also collects the
+    // group_sessions batch id for one-time group plans, if applicable.
+    const groupBatchByPlanKey = {};
+    for (const plan of plans) {
+      const result = await checkPlanCapacity(supabaseAdmin, plan);
+      if (!result.ok) {
+        return res.status(409).json({ error: result.error });
+      }
+      if (result.groupBatchId) {
+        groupBatchByPlanKey[plan.plan_key] = result.groupBatchId;
+      }
+    }
+
     const totalPaise = plans.reduce((sum, p) => sum + p.price_paise, 0);
     if (totalPaise < 100) {
       return res.status(400).json({ error: 'Order total is below the minimum payable amount.' });
@@ -87,6 +102,7 @@ export default async function handler(req, res) {
       razorpay_order_id: order.id,
       status: 'pending',
       valid_till: p.duration_days ? new Date(Date.now() + p.duration_days * 86400000).toISOString() : null,
+      group_batch_id: groupBatchByPlanKey[p.plan_key] || null,
     }));
 
     const { error: insertErr } = await supabaseAdmin.from('purchases').insert(pendingRows);
