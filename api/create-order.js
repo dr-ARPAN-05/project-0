@@ -101,7 +101,11 @@ export default async function handler(req, res) {
       billing_period: p.billing_period,
       razorpay_order_id: order.id,
       status: 'pending',
-      valid_till: p.duration_days ? new Date(Date.now() + p.duration_days * 86400000).toISOString() : null,
+      valid_till: p.fixed_expiry_date
+        ? new Date(p.fixed_expiry_date).toISOString()
+        : p.duration_days
+          ? new Date(Date.now() + p.duration_days * 86400000).toISOString()
+          : null,
       group_batch_id: groupBatchByPlanKey[p.plan_key] || null,
     }));
 
