@@ -51,7 +51,20 @@ const ALL_ADMIN_TABS = ADMIN_TAB_GROUPS.flatMap((g) => g.tabs);
 // always mounted, so there's no swap-in/swap-out that could blank the page.
 export default function Dashboard() {
   const { session, profile, isAdmin, signOut, needsOnboarding, refreshProfile } = useAuth();
-  const [adminTab, setAdminTab] = useState(ALL_ADMIN_TABS[0].id);
+
+  // Persisted so a refresh (or coming back after signing in again) lands on
+  // whichever tab was open last, instead of always resetting to Orders.
+  // Falls back to the first tab if the stored id no longer exists (e.g.
+  // after a tab was renamed/removed in a future update).
+  const [adminTab, setAdminTab] = useState(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('admin_dashboard_tab') : null;
+    return ALL_ADMIN_TABS.some((t) => t.id === stored) ? stored : ALL_ADMIN_TABS[0].id;
+  });
+
+  const selectAdminTab = (id) => {
+    setAdminTab(id);
+    localStorage.setItem('admin_dashboard_tab', id);
+  };
 
   const ActiveAdminComponent = ALL_ADMIN_TABS.find((t) => t.id === adminTab)?.Component;
 
@@ -91,7 +104,7 @@ export default function Dashboard() {
                       {g.tabs.map((t) => (
                         <button
                           key={t.id}
-                          onClick={() => setAdminTab(t.id)}
+                          onClick={() => selectAdminTab(t.id)}
                           className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                             adminTab === t.id
                               ? 'bg-violet text-white'
