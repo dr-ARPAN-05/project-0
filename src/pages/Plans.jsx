@@ -53,15 +53,15 @@ export default function Plans() {
   // display AND again server-side in /api/create-order — this filter is
   // just so nobody sees a plan they can't actually buy yet or anymore.
   const now = Date.now();
-  const visible = useMemo(
-    () =>
-      plans.filter((p) => {
-        if (p.available_from && new Date(p.available_from).getTime() > now) return false;
-        if (p.available_to && new Date(p.available_to).getTime() < now) return false;
-        return true;
-      }),
-    [plans, now]
-  );
+  const visible = useMemo(() => {
+    const linkedYearlyKeys = new Set(plans.filter((p) => p.yearly_plan_key).map((p) => p.yearly_plan_key));
+    return plans.filter((p) => {
+      if (p.available_from && new Date(p.available_from).getTime() > now) return false;
+      if (p.available_to && new Date(p.available_to).getTime() < now) return false;
+      if (linkedYearlyKeys.has(p.plan_key)) return false; // folded into its monthly counterpart's switch instead
+      return true;
+    });
+  }, [plans, now]);
 
   const activeCategory = CATEGORIES.find((c) => c.key === category) || CATEGORIES[0];
 

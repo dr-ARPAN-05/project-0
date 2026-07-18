@@ -14,6 +14,7 @@
 import Razorpay from 'razorpay';
 import { createClient } from '@supabase/supabase-js';
 import { checkPlanCapacity } from './_lib/capacity.js';
+import { checkMentorshipCartConflict } from './_lib/planConflicts.js';
 
 const supabaseAdmin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -64,6 +65,11 @@ export default async function handler(req, res) {
     const freeInCart = plans.find((p) => p.price_paise === 0);
     if (freeInCart) {
       return res.status(400).json({ error: `"${freeInCart.name}" is free — claim it directly, no checkout needed.` });
+    }
+
+    const conflict = await checkMentorshipCartConflict(supabaseAdmin, plans, user.id);
+    if (!conflict.ok) {
+      return res.status(409).json({ error: conflict.error });
     }
 
     // Capacity check every item BEFORE creating the Razorpay order — nobody

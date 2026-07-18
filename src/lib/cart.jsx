@@ -27,12 +27,41 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const addItem = useCallback((plan) => {
+  const addItem = useCallback((plan, { onConflict } = {}) => {
+    let blocked = false;
     setItems((prev) => {
       if (prev.some((i) => i.plan_key === plan.plan_key)) return prev; // one of each plan at a time
-      return [...prev, { plan_key: plan.plan_key, name: plan.name, price_paise: plan.price_paise, tagline: plan.tagline }];
+
+      // Students can only hold one non-bundle mentorship plan at a time —
+      // stacking monthly+yearly, one-time+monthly, or group+personal plans
+      // together is a known chargeback-abuse pattern (dispute one while
+      // still using the other). Bundles are exempt since they're
+      // deliberately curated combos.
+      if (plan.product === 'mentorship' && !plan.is_bundle) {
+        const hasConflict = prev.some((i) => i.product === 'mentorship' && !i.is_bundle);
+        if (hasConflict) {
+          blocked = true;
+          return prev;
+        }
+      }
+
+      return [
+        ...prev,
+        {
+          plan_key: plan.plan_key,
+          name: plan.name,
+          price_paise: plan.price_paise,
+          tagline: plan.tagline,
+          product: plan.product,
+          is_bundle: !!plan.is_bundle,
+        },
+      ];
     });
-    setOpen(true);
+    if (blocked) {
+      onConflict?.();
+    } else {
+      setOpen(true);
+    }
   }, []);
 
   const removeItem = useCallback((planKey) => {

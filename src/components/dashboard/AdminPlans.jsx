@@ -22,6 +22,7 @@ const BLANK_FORM = {
   bundle_plan_keys: [],
   capacity: '', // blank = uncapped. Meaning depends on plan type — see AdminPlans capacity field hint.
   min_enrollment: '', // group cohort plans only — batch doesn't "start" until this many join (informational, doesn't block purchases)
+  yearly_plan_key: '', // monthly plans only — links to a yearly plan_key to render as a Monthly/Yearly switch on one card
 };
 
 // datetime-local inputs want "YYYY-MM-DDTHH:mm" in LOCAL time, not ISO/UTC.
@@ -103,6 +104,7 @@ export default function AdminPlans() {
       bundle_plan_keys: plan.bundle_plan_keys || [],
       capacity: plan.capacity != null ? String(plan.capacity) : '',
       min_enrollment: plan.min_enrollment != null ? String(plan.min_enrollment) : '',
+      yearly_plan_key: plan.yearly_plan_key || '',
     });
     setEditingId(plan.id);
     setError(null);
@@ -150,6 +152,7 @@ export default function AdminPlans() {
         bundle_plan_keys: form.is_bundle ? form.bundle_plan_keys : null,
         capacity: form.capacity ? Number(form.capacity) : null,
         min_enrollment: form.min_enrollment ? Number(form.min_enrollment) : null,
+        yearly_plan_key: form.billing_period === 'monthly' && form.yearly_plan_key ? form.yearly_plan_key : null,
       };
 
       if (
@@ -313,6 +316,28 @@ export default function AdminPlans() {
               <option value="yearly">Yearly</option>
             </select>
           </Field>
+          {form.billing_period === 'monthly' && (
+            <Field label="Yearly counterpart (adds a Monthly/Yearly switch on this card)">
+              <select
+                value={form.yearly_plan_key}
+                onChange={(e) => setForm((f) => ({ ...f, yearly_plan_key: e.target.value }))}
+                className="w-full rounded-lg border border-line bg-base px-3 py-2 text-sm text-white"
+              >
+                <option value="">None — show as a standalone monthly plan</option>
+                {plans
+                  .filter((p) => p.billing_period === 'yearly' && !p.is_bundle && p.id !== editingId)
+                  .map((p) => (
+                    <option key={p.plan_key} value={p.plan_key}>
+                      {p.name}
+                    </option>
+                  ))}
+              </select>
+              <p className="mt-1 text-[11px] text-white/35">
+                The yearly plan you pick here stops appearing as its own card and gets folded into
+                this one behind a switch. Set its price/discount as usual on its own plan entry.
+              </p>
+            </Field>
+          )}
           <Field label="Valid for (days after purchase, blank = no expiry)">
             <input
               type="number"
@@ -508,6 +533,7 @@ export default function AdminPlans() {
                   {p.available_to && ` · until ${new Date(p.available_to).toLocaleDateString('en-IN')}`}
                   {p.capacity ? ` · cap ${p.capacity}` : ''}
                   {p.min_enrollment ? ` · min ${p.min_enrollment} to start` : ''}
+                  {p.yearly_plan_key ? ` · linked to yearly plan` : ''}
                 </div>
               </div>
               <button onClick={() => startEdit(p)} className="text-white/40 hover:text-white" title="Edit">
