@@ -12,6 +12,7 @@ const BLANK_FORM = {
   compare_at_price: '', // rupees — "was" price for slashed pricing, blank = no discount shown
   billing_period: 'one_time',
   duration_days: '',
+  fixed_expiry_date: '', // date string, blank = use duration_days instead. Overrides it when set.
   schedule_type: 'pick_date',
   is_group: false,
   max_redemptions: '',
@@ -92,6 +93,7 @@ export default function AdminPlans() {
       compare_at_price: plan.compare_at_price_paise != null ? String(plan.compare_at_price_paise / 100) : '',
       billing_period: plan.billing_period,
       duration_days: plan.duration_days != null ? String(plan.duration_days) : '',
+      fixed_expiry_date: plan.fixed_expiry_date ? plan.fixed_expiry_date.slice(0, 10) : '',
       schedule_type: plan.schedule_type,
       is_group: !!plan.is_group,
       max_redemptions: plan.max_redemptions != null ? String(plan.max_redemptions) : '',
@@ -138,6 +140,7 @@ export default function AdminPlans() {
         compare_at_price_paise: form.compare_at_price ? Math.round(Number(form.compare_at_price) * 100) : null,
         billing_period: form.billing_period,
         duration_days: form.duration_days ? Number(form.duration_days) : null,
+        fixed_expiry_date: form.fixed_expiry_date ? new Date(`${form.fixed_expiry_date}T23:59:59`).toISOString() : null,
         schedule_type: form.schedule_type,
         is_group: form.is_group,
         max_redemptions: form.max_redemptions ? Number(form.max_redemptions) : null,
@@ -315,9 +318,21 @@ export default function AdminPlans() {
               type="number"
               min="1"
               value={form.duration_days}
+              disabled={!!form.fixed_expiry_date}
               onChange={(e) => setForm((f) => ({ ...f, duration_days: e.target.value }))}
+              className="w-full rounded-lg border border-line bg-base px-3 py-2 text-sm text-white disabled:opacity-40"
+            />
+          </Field>
+          <Field label="OR expires on a fixed date for everyone (e.g. exam day)">
+            <input
+              type="date"
+              value={form.fixed_expiry_date}
+              onChange={(e) => setForm((f) => ({ ...f, fixed_expiry_date: e.target.value }))}
               className="w-full rounded-lg border border-line bg-base px-3 py-2 text-sm text-white"
             />
+            {form.fixed_expiry_date && (
+              <p className="mt-1 text-[11px] text-amber">Overrides "valid for X days" above — everyone who buys this expires on this date.</p>
+            )}
           </Field>
           {!form.is_bundle && (
             <>
@@ -484,6 +499,11 @@ export default function AdminPlans() {
                   )}{' '}
                   · {p.billing_period} · {p.schedule_type}
                   {p.max_redemptions ? ` · max ${p.max_redemptions} claims` : ''}
+                  {p.fixed_expiry_date
+                    ? ` · expires ${new Date(p.fixed_expiry_date).toLocaleDateString('en-IN')}`
+                    : p.duration_days
+                      ? ` · valid ${p.duration_days}d`
+                      : ''}
                   {p.available_from && ` · from ${new Date(p.available_from).toLocaleDateString('en-IN')}`}
                   {p.available_to && ` · until ${new Date(p.available_to).toLocaleDateString('en-IN')}`}
                   {p.capacity ? ` · cap ${p.capacity}` : ''}
